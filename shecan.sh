@@ -1,109 +1,61 @@
-#!/bin/bash  
+#!/bin/bash 
 
 status() {
     declare -i count=0
-    another_dns=false
 
     # Check if $resolv file exists
     if [ ! -f "$resolv" ]; then
-        log ""$resolv" file not found." "Error"
+        echo ""$resolv" file not found." >&2
+        exit 1
     fi
 
     # Check nameservers are present in the file
-    if grep -q "^nameserver ${shecan_ip[0]}" "$resolv"; then 
-        count+=1
-    fi 
-    if grep -q "^nameserver ${shecan_ip[1]}" "$resolv"; then
-        count+=1
-    fi
+    for dns in "${dns_ip[@]}" 
+        do
+            if grep -q "^nameserver "${dns}"" "$resolv"; then 
+                count+=1
+            fi 
+        done
     shecan_count=$count
-    # Check another DNS
-    if [ $(grep -c "^nameserver" "$resolv") -gt $count ]; then
-        another_dns=true
+}
+
+set() {
+    status
+    if [ $shecan_count -eq 0 ]; then 
+        sed -i 's/^nameserver/#&/' "$resolv" &&
+        add(){
+            for dns in "${dns_ip[@]}" 
+                do
+                    echo "nameserver $dns" >>"$resolv" 
+                done
+        } && add &&
+        echo "shecan nameservers are appended" &&
+        return 0
+    else
+        return 1
     fi
 }
 
-reload_dns(){
-    # nmcli general reload dns-rc
-    # nmcli con reload
-    # NetworkManager SIGUSR1
-    # NetworkManager SIGHUP
-    log "we dont have this yet" "Error"
+unset() {
+    status
+    if [ $shecan_count -eq 0 ]; then 
+        return 1
+    else
+        del(){
+            for dns in "${dns_ip[@]}" 
+                do
+                    sed -i "/nameserver "${dns}"/d" "$resolv"
+                done
+        } && del &&
+        sed -i 's/#nameserver/nameserver/g' "$resolv" &&
+        echo "shecan nameservers are deleted" &&
+        return 0
+    fi
 }
-
-log(){
-    case $2 in 
-        "Error")
-            echo "["$2"]: "$1"" >&2
-            exit 1
-        ;;
-        *)
-            #Warning || Info || *
-            echo "["$2"]: "$1""
-        ;;
-    esac
-}
-
 
 resolv="/etc/resolv.conf"
-shecan_ip=( "178.22.122.100" "185.51.200.2")
-actions=( "Status" "Set" "Unset" "Reload" "Quit")
+dns_ip=( "178.22.122.100" "185.51.200.2")
 shecan_count=0
 status
 
-#info message
-echo "With this command, you can change your default dns to shecan dns"
-echo "Note that this command is not permanent and is rewritten by system settings"
-
-PS3="what do you want to do? "
-select action in ${actions[@]}
-    do 
-        case $action in 
-            "Status")
-                status
-                if [ $shecan_count -eq 0 ]; then 
-                    log "You dont have any shecan nameserver" "Info"
-                else
-                    log "You have "$shecan_count" shecan nameserver" "Info"
-                    if $another_dns; then
-                        log "But you have another nameserver and this makes a conflict" "Warning"
-                    fi
-                fi
-            ;;
-            "Set")
-                status
-                if [ $shecan_count -eq 0 ]; then 
-                    sed -i 's/^nameserver/#&/' "$resolv" &&
-                    echo "nameserver ${shecan_ip[0]}" >>"$resolv" &&
-                    echo "nameserver ${shecan_ip[1]}" >>"$resolv" &&
-                    log "shecan nameservers are appended" "Info"
-                else
-                    log "You already have "$shecan_count" shecan nameserver" "Notice"
-                    if $another_dns; then
-                        log "But you have another nameserver and this makes a conflict" "Warning"
-                    fi
-                fi
-            ;;
-            "Unset")
-                status
-                if [ $shecan_count -eq 0 ]; then 
-                    log "You dont have any Shecan nameserver" "Notice"
-                else
-                    sed -i "/nameserver "${shecan_ip[0]}"/d" "$resolv" && 
-                    sed -i "/nameserver "${shecan_ip[1]}"/d" "$resolv" && 
-                    sed -i 's/#nameserver/nameserver/g' "$resolv" &&
-                    log "shecan nameservers are deleted" "Info"
-                fi
-            ;;
-            "Reload")
-                reload_dns
-                log "The configuration was reloaded" "Info"
-            ;;
-            "Quit")
-                break
-            ;;
-            *)
-                log "invalid choice" "Warning"
-        esac
-    done
-    
+set || unset || (echo "unexpected error">&2 && exit 1)
