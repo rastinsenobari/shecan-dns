@@ -10,12 +10,11 @@ status() {
     fi
 
     # Check nameservers are present in the file
-    for dns in "${dns_ip[@]}" 
-        do
-            if grep -q "^nameserver "${dns}"" "$resolv"; then 
-                count+=1
-            fi 
-        done
+    for dns in "${dns_ip[@]}"; do
+        if grep -q "^nameserver "${dns}"" "$resolv"; then 
+            count+=1
+        fi 
+    done
     shecan_count=$count
 }
 
@@ -24,10 +23,9 @@ set() {
     if [ $shecan_count -eq 0 ]; then 
         sed -i 's/^nameserver/#&/' "$resolv" &&
         add(){
-            for dns in "${dns_ip[@]}" 
-                do
-                    echo "nameserver $dns" >>"$resolv" 
-                done
+            for dns in "${dns_ip[@]}"; do
+                echo "nameserver $dns" >>"$resolv" 
+            done
         } && add &&
         echo "shecan nameservers are appended" &&
         return 0
@@ -42,10 +40,9 @@ unset() {
         return 1
     else
         del(){
-            for dns in "${dns_ip[@]}" 
-                do
-                    sed -i "/nameserver "${dns}"/d" "$resolv"
-                done
+            for dns in "${dns_ip[@]}"; do
+                sed -i "/nameserver "${dns}"/d" "$resolv"
+            done
         } && del &&
         sed -i 's/#nameserver/nameserver/g' "$resolv" &&
         echo "shecan nameservers are deleted" &&
