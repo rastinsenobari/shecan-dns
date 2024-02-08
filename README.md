@@ -16,7 +16,7 @@ sudo chmod +x ./shecan.sh
 
 3. Enjoy it.
 ```bash
-sudo ./shecan
+sudo ./shecan.sh
 ```
 
 ### Easy to use
