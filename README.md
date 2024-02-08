@@ -25,5 +25,11 @@ sudo ln -fs $(pwd)/shecan.sh /usr/bin/shecan
 ```
 Create a symbolic link for your script, enabling you to swiftly execute it with a simple command, `sudo shecan`.
 
+### Options
+
+| Option | Description |
+| ----------- | ----------- |
+| -s \| --status | Provide a summary of DNS terms  |
+
 ## Help Us
 If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue. Don't forget to give the project a star! Thanks again!

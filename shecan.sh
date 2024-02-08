@@ -50,9 +50,31 @@ unset() {
     fi
 }
 
+check_option(){
+    while [[ "$#" -gt 0 ]]; do
+        case "$1" in
+            -s|--status)
+                status
+                if [ $shecan_count -eq 0 ]; then 
+                    echo "You don't have any shecan DNS"
+                else
+                    echo "You have $shecan_count shecan DNS"  
+                fi
+                exit 0
+                ;;
+            *)
+                echo "Error: Unknown option $1">&2
+                #help
+                exit 1
+                ;;
+        esac
+    done
+}
+
 resolv="/etc/resolv.conf"
 dns_ip=( "178.22.122.100" "185.51.200.2")
 shecan_count=0
 status
+check_option "$@"
 
 set || unset || (echo "unexpected error">&2 && exit 1)
